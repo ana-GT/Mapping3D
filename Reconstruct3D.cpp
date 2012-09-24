@@ -17,22 +17,23 @@ int main( int argc, char* argv[] )  {
   R3D r3d( argv[1] );
   r3d.matchAllFrames_3( );
   r3d.findMaxPutativeMatches();
-  cv::Mat t01;
-  int img1 = 8;
-  int img2 = 9;
-  t01 = r3d.Ransac_Rigid3D( img1, img2 );
+  
+  int img1 = 1;
+  int img2 = 0;
+  cv::Mat tf = r3d.Ransac_Rigid3D( img1, img2 );
+  std::cout << "Tf from 0 to 1: \n" << tf << std::endl;
+  r3d.getAllTransforms();
+  r3d.getTransformedPointClouds();
 
   // Create viewer
   boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer = createViewer();
 
   // View the path
   reset_PCL_Tools_counters();
-  /*
-  for( int i = 0; i < r3d.getNumFrames(); ++i ) {
-    viewPCDRGBA( r3d.applyRigid3DToPCD( t01, r3d.getPointCloud(i) ), viewer );
-    }*/
-  viewPCDRGBA( r3d.getPointCloud(img2), viewer );
-  viewPCDRGBA( r3d.applyRigid3DToPCD( t01,r3d.getPointCloud(img1) ), viewer );
+  int num = r3d.getNumFrames();
+  for( int i = 0; i < num; ++i ) {
+    viewPCDRGBA( r3d.getTransformedPointCloud(i), viewer );
+  }
 
   // Loop
     while( !viewer->wasStopped() ) {

@@ -52,6 +52,9 @@ class R3D {
   pcl::PointCloud<pcl::PointXYZRGBA>::Ptr applyRigid3DToPCD( cv::Mat _m, 
 							     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr _inputCloud );
 
+  void getAllTransforms();
+  void getTransformedPointClouds();
+
   //-- Matching
   void matchAllFrames_1();
   void matchAllFrames_3();
@@ -61,6 +64,7 @@ class R3D {
 		      const cv::DMatch &_match );
   cv::Mat getSomeMatchesDraw( int _ind1, int _ind2,
 			      const std::vector<int> &matchesIndices );
+  cv::Mat getKeypointsDraw( int _ind );
 
   //-- Data acquisition
   bool readPCDData( char* _filenames, 
@@ -81,6 +85,10 @@ class R3D {
   int getNumMaxMatchesSize( int _ind );
   int getMaxMatchesIndices( int _ind );
   pcl::PointCloud<pcl::PointXYZRGBA>::Ptr getPointCloud( int _ind );
+  pcl::PointCloud<pcl::PointXYZRGBA>::Ptr getTransformedPointCloud( int _ind );
+
+  std::vector<cv::Mat> mLocalTransforms;
+  std::vector<cv::Mat> mGlobalTransforms;
 
  private:
   // Image / PCD data variables
@@ -88,7 +96,9 @@ class R3D {
   std::vector<cv::Mat> mGrayImages;
   std::vector<cv::Mat> mDepthImages;
   std::vector<cv::Mat> mDepthData;
+
   std::vector< pcl::PointCloud<pcl::PointXYZRGBA>::Ptr > mPointClouds;
+  std::vector< pcl::PointCloud<pcl::PointXYZRGBA>::Ptr > mTransformedPointClouds;
   int mNumFrames;
   int mHeight;
   int mWidth;

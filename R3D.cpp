@@ -174,7 +174,7 @@ cv::Mat R3D::get_Model_Rigid3D( int _ind1,
   svd(A);
   svd.backSubst( B, param );
   
-  cv::Mat transf = cv::Mat::zeros( 3, 4, CV_32FC1 );
+  cv::Mat transf = cv::Mat::zeros( 4, 4, CV_32FC1 );
   ind = 0;
   for( int j = 0; j < 3; ++j ) {
     for( int i = 0; i < 4; ++i ) {
@@ -182,7 +182,9 @@ cv::Mat R3D::get_Model_Rigid3D( int _ind1,
       ind++;
     }
   }
-
+  // Last row: 0 0 0 1
+  transf.at<float>(3,3) = 1.0;
+  
   return transf;
 }
 
@@ -291,6 +293,55 @@ pcl::PointCloud<pcl::PointXYZRGBA>::Ptr R3D::applyRigid3DToPCD( cv::Mat _m,
   			    a3d );
 
   return outputCloud;
+}
+
+/**
+ * @function getAllTransforms
+ */
+void R3D::getAllTransforms() {
+
+  printf( "get All Transforms \n" );
+
+  mLocalTransforms.resize( mNumFrames );
+  mGlobalTransforms.resize( mNumFrames );
+
+  cv::Mat tf_local( 4, 4, CV_32FC1 );
+  cv::Mat tf_global( 4, 4, CV_32FC1 );
+  
+  // Take global frame as 0
+  tf_local = cv::Mat::eye( 4, 4, CV_32FC1 );
+  mLocalTransforms[0] = tf_local.clone();
+
+  // Get following local transforms
+  for( int i = 1; i < mNumFrames; ++i ) {
+    tf_local = Ransac_Rigid3D( i, i-1 );
+    mLocalTransforms[i] = tf_local.clone();
+  }
+
+  // Get global transforms
+
+  // Global frame 0 is still identity  
+  mGlobalTransforms[0] = mLocalTransforms[0].clone();
+
+  for( int i = 1; i < mNumFrames; ++i ) {
+    tf_global = mGlobalTransforms[i-1]*mLocalTransforms[i];
+    mGlobalTransforms[i] = tf_global.clone();
+  }
+
+}
+
+/**
+ * @function getTransformedPointClouds
+ */
+void R3D::getTransformedPointClouds() {
+
+  mTransformedPointClouds.resize(0);
+
+  for( int i = 0; i < mNumFrames; ++i ) {
+     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr transformedPointCloud = applyRigid3DToPCD( mGlobalTransforms[i],mPointClouds[i] );
+     mTransformedPointClouds.push_back( transformedPointCloud );
+  }
+
 }
 
 ///////////////////////////// MATCHING //////////////////////////////////////////////////
@@ -530,6 +581,16 @@ cv::Mat R3D::getSomeMatchesDraw( int _ind1, int _ind2,
 		   matchesImage );
   return matchesImage;
 }
+
+/**
+ * @function getKeypointsDraw
+ */
+cv::Mat R3D::getKeypointsDraw( int _ind ) {
+
+  cv::Mat keypointsDraw;
+  cv::drawKeypoints( mRgbImages[_ind],  mKeypoints[_ind], keypointsDraw, cv::Scalar::all(-1), cv::DrawMatchesFlags::DEFAULT );
+  return keypointsDraw;
+}
     
 
 //////////////////////////// DATA ACQUISITION ///////////////////////////////////////////
@@ -707,5 +768,15 @@ int R3D::getMaxMatchesIndices( int _ind ) {
 pcl::PointCloud<pcl::PointXYZRGBA>::Ptr R3D::getPointCloud( int _ind ) {
   if( _ind < mNumFrames ) {
     return mPointClouds[_ind];
+  }
+}
+
+/**
+ * @function getTransformedPointCloud
+ */
+pcl::PointCloud<pcl::PointXYZRGBA>::Ptr R3D::getTransformedPointCloud( int _ind ) {
+
+  if( _ind < mNumFrames ) {
+    return mTransformedPointClouds[_ind];
   }
 }
