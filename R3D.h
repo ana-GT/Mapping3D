@@ -1,5 +1,7 @@
 /**
  * @file R3D.h
+ * @author A. Huaman :D
+ * @date Damn 2012/09/23
  */
 
 #ifndef __R_3D_H__
@@ -16,6 +18,7 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/console/parse.h>
+#include <pcl/common/transforms.h>
 
 #include <vector>
 
@@ -25,8 +28,41 @@
 class R3D {
 
  public:
+
+  // Constructor and destructor
   R3D( char *_filenames );
   ~R3D();
+
+  //-- RANSAC 
+  cv::Mat Ransac_Rigid3D( int _ind1, int _ind2 );
+  cv::Mat get_Model_Rigid3D( int _ind1,
+			     int _ind2, 
+			     std::vector<int> _indices );  
+  float getErrorModel( int _ind1, int _ind2, int _ind,
+		       const cv::Mat &_params );
+  void get3DPointsFromMatch( int _ind1, int _ind2, 
+			     const cv::DMatch &_match,
+			     float &_X1, float &_Y1, float &_Z1, 
+			     float &_X2, float &_Y2, float &_Z2 );
+  std::vector<int> getRandomIndices( int _numSamples, 
+				     int _totalSamples );
+  bool isInSet( int _index, 
+		std::vector<int> _currentIndices );
+  int getRandom( int _max );
+  pcl::PointCloud<pcl::PointXYZRGBA>::Ptr applyRigid3DToPCD( cv::Mat _m, 
+							     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr _inputCloud );
+
+  //-- Matching
+  void matchAllFrames_1();
+  void matchAllFrames_3();
+  void findMaxPutativeMatches();
+  cv::Mat getMaxMatchingDraw( int _ind  );
+  bool matchHasDepth( int _ind1, int _ind2,
+		      const cv::DMatch &_match );
+  cv::Mat getSomeMatchesDraw( int _ind1, int _ind2,
+			      const std::vector<int> &matchesIndices );
+
+  //-- Data acquisition
   bool readPCDData( char* _filenames, 
 		    std::vector< pcl::PointCloud<pcl::PointXYZRGBA>::Ptr > &_pcdData );
 
@@ -35,42 +71,23 @@ class R3D {
   
   bool getGrayImages( const std::vector<cv::Mat> &_rgbImages,
 		      std::vector<cv::Mat> &_grayImages );
+  bool getDepthImages( const std::vector< pcl::PointCloud<pcl::PointXYZRGBA>::Ptr > &_pcdData,
+		       std::vector<cv::Mat> &_depthImages, std::vector<cv::Mat> &_depthData );
 
-  void matchAllFrames_1();
-  void matchAllFrames_3();
-
-  void findMaxPutativeMatches();
-  cv::Mat getMaxMatchingDraw( int _ind  );
-
-  inline cv::Mat copyRgb( int _ind );
+  //-- Get functions
+  inline cv::Mat getRgb( int _ind );
+  inline cv::Mat getDepth( int _ind );
   inline int getNumFrames();
   int getNumMaxMatchesSize( int _ind );
   int getMaxMatchesIndices( int _ind );
-  bool matchHasDepth( int _ind1, int _ind2,
-		      const cv::DMatch &_match );
-
-  // RANSAC stuff
-  bool Ransac_Rigid3D( int _ind1, int _ind2 );
-  cv::Mat get_Model_Rigid3D( int _ind1,
-			     int _ind2, 
-			     std::vector<int> _indices );
-  void get3DPointsFromMatch( int _ind1, int _ind2, 
-			     const cv::DMatch &_match,
-			     float &_X1, float &_Y1, float &_Z1, 
-			     float &_X2, float &_Y2, float &_Z2 );
-  std::vector<int> getRandomIndices( int _numSamples, int _totalSamples );
-  bool isInSet( int _index, 
-		std::vector<int> _currentIndices );
-  int getRandom( int _max );
-
-  // Getters
   pcl::PointCloud<pcl::PointXYZRGBA>::Ptr getPointCloud( int _ind );
 
  private:
-
-  // Image / PCD Data variables
+  // Image / PCD data variables
   std::vector<cv::Mat> mRgbImages;
   std::vector<cv::Mat> mGrayImages;
+  std::vector<cv::Mat> mDepthImages;
+  std::vector<cv::Mat> mDepthData;
   std::vector< pcl::PointCloud<pcl::PointXYZRGBA>::Ptr > mPointClouds;
   int mNumFrames;
   int mHeight;
@@ -78,7 +95,6 @@ class R3D {
   
   // SURF Keypoint detection and descriptor
   int mMinHessian;
-  float mMaxDistance;
   float mRadiusFactor;
 
   std::vector< std::vector<cv::KeyPoint> > mKeypoints; 
@@ -91,24 +107,36 @@ class R3D {
   // RANSAC variables
   int mN; /**< Num Trials */
   int mS; /**< Model instantiation size */
+  float mThresh;
 
+  // SVD 
   cv::SVD svd;
   cv::Mat mA;
   cv::Mat mB;
-  cv::Mat mParams;
+  std::vector<cv::Mat> mParams;
 };
   
 ////////////////// INLINE FUNCTIONS /////////////////////////////////////// 
 
 /**
- * @function copyRgb
+ * @function getRgb
  */
-inline cv::Mat R3D::copyRgb( int _ind ) {
+inline cv::Mat R3D::getRgb( int _ind ) {
   
   if( _ind < mNumFrames ) {
       return mRgbImages[_ind];
   }
+}
+
+/**
+ * @function getDepth
+ */
+inline cv::Mat R3D::getDepth( int _ind ) {
+  
+  if( _ind < mNumFrames ) {
+      return mDepthImages[_ind];
   }
+}
 
 /**
  * @function getNumFrames
