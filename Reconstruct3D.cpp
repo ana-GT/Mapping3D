@@ -8,6 +8,7 @@
 char rgbWindow[50] = "RGB Window";
 char depthWindow[50] = "Depth Window";
 char matchWindow[50] = "Match Window";
+char keypointWindow[50] = "Keypoint Window";
 
 /**
  * @function main
@@ -17,14 +18,9 @@ int main( int argc, char* argv[] )  {
   R3D r3d( argv[1] );
   r3d.matchAllFrames_3( );
   r3d.findMaxPutativeMatches();
-  
-  int img1 = 1;
-  int img2 = 0;
-  cv::Mat tf = r3d.Ransac_Rigid3D( img1, img2 );
-  std::cout << "Tf from 0 to 1: \n" << tf << std::endl;
   r3d.getAllTransforms();
   r3d.getTransformedPointClouds();
-
+  /*
   // Create viewer
   boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer = createViewer();
 
@@ -40,11 +36,10 @@ int main( int argc, char* argv[] )  {
     viewer->spinOnce(100);
     boost::this_thread::sleep( boost::posix_time::microseconds(100000));
     } 
-  
-    //  cv::imshow( rgbWindow, t01 );
- 
-  //cv::imshow( rgbWindow, r3d.copyRgb( 0 ) ); 
-    /* 
+  */
+
+  cv::imshow( rgbWindow, r3d.getRgb( 0 ) ); 
+    
   int key;
   int ind = 0;
   while( true ) {
@@ -61,13 +56,14 @@ int main( int argc, char* argv[] )  {
 	ind++;
 	ind = ind % r3d.getNumFrames();
 	printf("Showing image %d out of %d \n", ind, r3d.getNumFrames() );
-	cv::imshow( rgbWindow, r3d.getRgb( ind ) );
-	cv::imshow( depthWindow, r3d.getDepth( ind ) );
+	//cv::imshow( rgbWindow, r3d.getRgb( ind ) );
+	//cv::imshow( depthWindow, r3d.getDepth( ind ) );
 	cv::imshow( matchWindow, r3d.getMaxMatchingDraw( ind ) );
+	//cv::imshow( keypointWindow, r3d.getKeypointsDraw( ind ) );
       }
    
     } // end if( key != -1 )
   }
-    */
+  
   return 0;
 }

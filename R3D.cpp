@@ -89,7 +89,7 @@ cv::Mat R3D::Ransac_Rigid3D( int _ind1, int _ind2 ) {
 	count++;
       }
     }
-    printf("[%d] Count : %d  Best count: %d \n", i, count, bestCount);
+    //printf("[%d] Count : %d  Best count: %d \n", i, count, bestCount);
     // Compare with best
     if( count > bestCount ) {
       bestCount = count;
@@ -97,8 +97,8 @@ cv::Mat R3D::Ransac_Rigid3D( int _ind1, int _ind2 ) {
       bestInitSet = randomSampleIndices;
     }
   }
-  printf("Here bestParams rows: %d cols: %d \n", bestParams.rows, bestParams.cols );
-  std::cout << "Best params: \n" << bestParams << std::endl;
+  printf( "Best params  with count %d / %d (%d - %d )  \n", bestCount, totalSamples, _ind1, _ind2 ); 
+  std::cout<< bestParams << std::endl;
 
   //return getSomeMatchesDraw( _ind1, _ind2, bestInitSet );
  
